@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .upload-info {
+        max-width: 600px;
+        margin: 4rem auto;
+        padding: 2rem;
+        background: var(--background-card);
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .upload-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        color: var(--text-primary);
+    }
+
+    .bot-info {
+        margin-bottom: 2rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    .bot-link {
+        display: inline-block;
+        padding: 1rem 2rem;
+        background: var(--accent-color);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: transform 0.2s ease;
+    }
+
+    .bot-link:hover {
+        transform: scale(1.05);
+    }
+
+    .features-list {
+        text-align: left;
+        margin: 2rem 0;
+        color: var(--text-primary);
+    }
+
+    .features-list li {
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .features-list i {
+        color: var(--accent-color);
+    }
+
+    .simple-upload {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-color);
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .simple-upload a {
+        color: var(--text-primary);
+        text-decoration: underline;
+    }
+</style>
+
+<div class="upload-info">
+    <h1 class="upload-title">Загрузка видео</h1>
+    
+    <div class="bot-info">
+        <p>Для максимального удобства и безопасности, загрузка видео доступна через Telegram бот.</p>
+        <p>Это самый быстрый и надёжный способ поделиться видео.</p>
+    </div>
+
+    <ul class="features-list">
+        <li><i class="fas fa-check"></i> Мгновенная загрузка без ограничений по размеру</li>
+        <li><i class="fas fa-check"></i> Автоматическая конвертация в нужный формат</li>
+        <li><i class="fas fa-check"></i> Защита от сбоев при загрузке</li>
+        <li><i class="fas fa-check"></i> Уведомления о статусе обработки</li>
+        <li><i class="fas fa-check"></i> Полная анонимность</li>
+    </ul>
+
+    <a href="https://t.me/your_bot_username" class="bot-link" target="_blank">
+        <i class="fab fa-telegram"></i> Перейти к боту
+    </a>
+</div>
+{% endblock %}
+
+{% block footer %}
+<div class="simple-upload">
+    <a href="{% url 'videos:video_upload_simple' %}">Простая загрузка видео</a>
+</div>
+{% endblock %} 

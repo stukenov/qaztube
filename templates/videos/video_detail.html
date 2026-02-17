@@ -1,0 +1,570 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ video.title }} - QazTube{% endblock %}
+
+{% block content %}
+<style>
+    .video-container {
+        position: relative;
+        width: 100%;
+        background: var(--background-card);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .video-player {
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: #000;
+    }
+
+    .video-player video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .video-info {
+        padding: 1.5rem;
+    }
+
+    .video-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0 0 1rem 0;
+        color: var(--text-primary);
+    }
+
+    .video-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        color: var(--text-secondary);
+    }
+
+    .video-stats {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.9rem;
+    }
+
+    .video-description {
+        color: var(--text-primary);
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        white-space: pre-wrap;
+    }
+
+    .video-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .action-button {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--background-card);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .action-button:hover {
+        background: var(--background-hover);
+    }
+
+    .action-button.delete {
+        color: var(--error-color);
+        border-color: var(--error-color);
+    }
+
+    .action-button.delete:hover {
+        background: var(--error-color);
+        color: white;
+    }
+
+    .delete-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .delete-modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: var(--background-card);
+        padding: 2rem;
+        border-radius: 12px;
+        max-width: 400px;
+        width: 90%;
+    }
+
+    .modal-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+    }
+
+    .modal-text {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }
+
+    .modal-button {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .modal-button.cancel {
+        background: var(--background-hover);
+        color: var(--text-primary);
+    }
+
+    .modal-button.confirm {
+        background: var(--error-color);
+        color: white;
+    }
+
+    .modal-button:hover {
+        opacity: 0.9;
+    }
+
+    .code-input {
+        width: 100%;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: var(--background-card);
+        color: var(--text-primary);
+    }
+
+    .processing-container, .error-container {
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: var(--background-hover);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .processing-message, .error-message {
+        padding: 2rem;
+    }
+
+    .progress {
+        width: 100%;
+        max-width: 300px;
+        height: 4px;
+        background: var(--background-card);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: var(--accent-color);
+        transition: width 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+        .video-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .video-actions {
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="video-container">
+    {% if video.transcoding_status == 'completed' %}
+        <video id="video" controls class="video-player">
+            <!-- Источники добавятся через JavaScript -->
+        </video>
+    {% elif video.transcoding_status == 'processing' %}
+        <div class="processing-container">
+            <div class="processing-message">
+                <h3>Видео обрабатывается...</h3>
+                <div class="progress">
+                </div>
+            </div>
+        </div>
+    {% elif video.transcoding_status == 'failed' %}
+        <div class="error-container">
+            <div class="error-message">
+                <h3>Ошибка при обработке видео</h3>
+                <p>{{ video.transcoding_error }}</p>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="video-info">
+        <h1>{{ video.title }}</h1>
+        <div class="video-meta">
+            <div class="video-stats">
+                <span>{{ video.views }} просмотров</span>
+                <span>{{ video.created_at|timesince }} назад</span>
+            </div>
+            <div class="video-actions">
+                <button class="action-button" onclick="copyVideoLink()">
+                    <i class="fas fa-share"></i>
+                    Поделиться
+                </button>
+                <button class="action-button delete" onclick="showDeleteModal()">
+                    <i class="fas fa-trash"></i>
+                    Удалить
+                </button>
+            </div>
+        </div>
+        {% if video.description %}
+        <div class="video-description">{{ video.description }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="delete-modal" id="deleteModal">
+    <div class="modal-content">
+        <h3 class="modal-title">Удаление видео</h3>
+        <p class="modal-text">Для удаления видео введите код доступа:</p>
+        <input type="text" id="deleteCode" class="code-input" placeholder="Введите код доступа">
+        <div class="modal-actions">
+            <button class="modal-button cancel" onclick="hideDeleteModal()">Отмена</button>
+            <button class="modal-button confirm" onclick="deleteVideo()">Удалить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyVideoLink() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Ссылка скопирована в буфер обмена');
+    }).catch(err => {
+        console.error('Ошибка при копировании: ', err);
+    });
+}
+
+function showDeleteModal() {
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+    document.getElementById('deleteCode').value = '';
+}
+
+function deleteVideo() {
+    const code = document.getElementById('deleteCode').value;
+    if (!code) {
+        alert('Введите код доступа');
+        return;
+    }
+
+    fetch(`/videos/{{ video.uid }}/delete/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ code: code })
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            throw new Error('Неверный код доступа');
+        }
+    })
+    .catch(error => {
+        alert(error.message);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.video-detail-container {
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+.video-detail-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+.video-main-content {
+    margin-bottom: 20px;
+}
+.video-player-container {
+    text-align: center;
+}
+.video-player {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+}
+.video-info {
+    margin-top: 20px;
+}
+.video-title {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+.video-meta {
+    color: #666;
+}
+.divider {
+    margin: 20px 0;
+}
+.section-title {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+.video-description {
+    line-height: 1.6;
+}
+.channel-info {
+    margin-top: 20px;
+}
+.channel-name {
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+.channel-subscribers {
+    color: #666;
+}
+.channel-actions {
+    margin-top: 10px;
+}
+.subscribe-button, .like-button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.like-button {
+    margin-left: 10px;
+}
+.comments-section {
+    margin-top: 40px;
+}
+.comment-form {
+    margin-bottom: 20px;
+}
+.comment-textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.comment-button-container {
+    margin-top: 10px;
+}
+.comment-button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.comment {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.comment-username {
+    font-weight: bold;
+}
+.comment-date {
+    color: #666;
+}
+.comment-actions {
+    margin-top: 5px;
+}
+.report-button, .copy-link-button {
+    background-color: transparent;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+}
+.copy-link-button {
+    margin-left: 10px;
+}
+.comment-text {
+    margin-top: 10px;
+}
+.comment-footer {
+    margin-top: 10px;
+}
+.no-comments {
+    color: #666;
+}
+.sidebar {
+    margin-top: 40px;
+}
+.related-video-link {
+    text-decoration: none;
+    color: inherit;
+}
+.related-video {
+    display: flex;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.related-video-thumbnail {
+    flex-shrink: 0;
+    width: 120px;
+    height: 90px;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.related-video-duration {
+    font-size: 12px;
+    color: #666;
+}
+.related-video-info {
+    padding: 10px;
+}
+.related-video-title {
+    font-size: 16px;
+    margin: 0;
+}
+.related-video-channel, .related-video-meta {
+    color: #666;
+}
+.related-video-meta {
+    font-size: 12px;
+}
+.sidebar-info {
+    margin-top: 40px;
+}
+.info-item {
+    margin-bottom: 10px;
+}
+.info-title {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+.info-content {
+    color: #666;
+}
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.tag {
+    background-color: #e0e0e0;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const video = document.getElementById('video');
+    if (!video) return;
+
+    // Проверяем доступные источники
+    const sources = {
+        hls: "{{ video.hls_file.url }}" || null,
+        processed: "{{ video.processed_video.url }}" || null,
+        original: "{{ video.video_file.url }}" || null
+    };
+
+    // Функция для воспроизведения HLS
+    function playHLS(url) {
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                video.play();
+            });
+        }
+        // Для Safari, где HLS поддерживается нативно
+        else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+        }
+    }
+
+    // Выбираем лучший доступный источник
+    if (sources.hls) {
+        playHLS(sources.hls);
+    } else if (sources.processed) {
+        video.src = sources.processed;
+    } else if (sources.original) {
+        video.src = sources.original;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+        padding: 1rem 0;
+    }
+
+    .video-card {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--background-card);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        text-decoration: none;
+    }
+
+    .video-card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .video-thumbnail {
+        position: relative;
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        background: var(--background-dark);
+        background-size: cover;
+        background-position: center;
+    }
+
+    .video-thumbnail img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .video-duration {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+
+    .video-info {
+        padding: 1rem;
+    }
+
+    .video-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin: 0 0 0.5rem 0;
+        color: var(--text-primary);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .video-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .video-stats {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .featured-section {
+        margin-bottom: 3rem;
+    }
+
+    .featured-video {
+        position: relative;
+        width: 100%;
+        height: 60vh;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        background: var(--background-dark);
+    }
+
+    .featured-video img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .featured-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 2rem;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+        color: white;
+    }
+
+    .featured-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .featured-description {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 2rem 0 1rem;
+        color: var(--text-primary);
+    }
+
+    .no-videos {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 4rem 0;
+    }
+
+    @media (max-width: 768px) {
+        .video-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .featured-video {
+            height: 40vh;
+        }
+
+        .featured-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+{% if featured_video %}
+<div class="featured-section">
+    <a href="{% url 'videos:video_detail' featured_video.uid %}" class="featured-video">
+        {% if featured_video.thumbnail %}
+        <img src="{{ featured_video.thumbnail.url }}" alt="{{ featured_video.title }}">
+        {% endif %}
+        <div class="featured-overlay">
+            <h1 class="featured-title">{{ featured_video.title }}</h1>
+            <p class="featured-description">{{ featured_video.description|truncatewords:30 }}</p>
+            <div class="video-meta">
+                <span>{{ featured_video.views }} просмотров</span>
+                <span>{{ featured_video.created_at|timesince }} назад</span>
+            </div>
+        </div>
+    </a>
+</div>
+{% endif %}
+
+<h2 class="section-title">Новые видео</h2>
+<div class="video-grid">
+    {% for video in videos %}
+    <a href="{% url 'videos:video_detail' video.uid %}" class="video-card">
+        <div class="video-thumbnail">
+            {% if video.thumbnail %}
+            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+            {% endif %}
+            {% if video.duration %}
+            <span class="video-duration">{{ video.duration }}</span>
+            {% endif %}
+        </div>
+        <div class="video-info">
+            <h3 class="video-title">{{ video.title }}</h3>
+            <div class="video-meta">
+                <div class="video-stats">
+                    <span>{{ video.views }} просмотров</span>
+                    <span>{{ video.created_at|timesince }} назад</span>
+                </div>
+            </div>
+        </div>
+    </a>
+    {% empty %}
+    <div class="no-videos">
+        <h3>Видео не найдены</h3>
+        <p>Загрузите видео через наш Telegram бот!</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

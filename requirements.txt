@@ -1,0 +1,10 @@
+Django
+python-dotenv
+django-crispy-forms
+crispy-bootstrap5
+Pillow
+django-video-encoding
+celery
+redis
+opencv-python
+python-telegram-bot
